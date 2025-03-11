@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Get instant, AI-powered feedback on your resume with our AI Resume Analyzer." />
+  <title>AI Resume Analyzer</title>
+  <link rel="stylesheet" href="resume.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><i class="fas fa-file-alt"></i> AI Resume Analyzer</h1>
+      <p>Get instant, AI-powered feedback on your resume</p>
+    </header>
+
+    <main role="main">
+      <!-- Upload Section -->
+      <section class="upload-section">
+        <form id="resumeForm" aria-label="Upload your resume for analysis">
+          <div class="drop-zone" id="dropZone">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <p class="main-text">Drag &amp; Drop your resume here</p>
+            <p class="sub-text">or</p>
+            <button type="button" class="browse-btn">Browse Files</button>
+            <p class="file-info">PDF files only, max 5MB</p>
+            <input type="file" id="fileInput" name="resume" accept=".pdf" hidden />
+          </div>
+          <div class="selected-file hidden" id="selectedFile">
+            <i class="fas fa-file-pdf"></i>
+            <span id="fileName"></span>
+            <button type="button" id="removeFile" class="remove-btn" aria-label="Remove file">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <button type="submit" id="analyzeBtn" class="analyze-btn" disabled>
+            <i class="fas fa-robot"></i> Analyze Resume
+          </button>
+        </form>
+      </section>
+
+      <!-- Results Section -->
+      <section class="results-section hidden" id="resultsSection" aria-live="polite">
+        <div class="results-header">
+          <h2><i class="fas fa-chart-bar"></i> Analysis Results</h2>
+          <button id="downloadBtn" class="download-btn">
+            <i class="fas fa-download"></i> Download Report
+          </button>
+        </div>
+
+        <!-- Loader -->
+        <div class="loader" id="loader">
+          <div class="spinner"></div>
+          <p>Analyzing your resume...</p>
+        </div>
+
+        <!-- Analysis Results Content -->
+        <article id="analysisResults" class="analysis-content">
+          <!-- Rendered analysis sections will appear here -->
+        </article>
+      </section>
+
+      <!-- Error Message Section -->
+      <section id="errorMessage" class="error-message hidden" role="alert">
+        <i class="fas fa-exclamation-circle"></i>
+        <span></span>
+      </section>
+    </main>
+  </div>
+
+  <noscript>
+    <p style="color: red; text-align: center;">
+      JavaScript is required for this application to function properly.
+    </p>
+  </noscript>
+  
+  <script src="resume.js"></script>
+</body>
+</html>

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Career Counselling Assistant</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-container">
+    <header>
+      <div class="header-content">
+        <div class="header-left">
+          <h1>Career Counselling Assistant</h1>
+          <p class="subtitle">Your AI-powered guide to career success</p>
+        </div>
+        <div class="profile-section">
+          <button id="profile-button" class="profile-button">
+            <span id="user-name">User</span>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M4 6L8 10L12 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
+          <div id="profile-menu" class="profile-menu">
+            <button id="logout-button">Logout</button>
+          </div>
+        </div>
+      </div>
+      <!-- Navigation Buttons for Additional Features -->
+      <div class="navigation">
+        <button onclick="window.location.href='index.html'">Career Counseling</button>
+        <button onclick="window.location.href='iqtest.html'">IQ Test &amp; Personality</button>
+        <button onclick="window.location.href='resume.html'">Resume Analyzer</button>
+      </div>
+    </header>
+
+    <main>
+      <div class="quick-actions">
+        <button class="quick-action-btn" data-prompt="What career paths align with my interests in technology and creativity?">
+          Explore Tech &amp; Creative Careers
+        </button>
+        <button class="quick-action-btn" data-prompt="What skills should I develop for future job market demands?">
+          Future Skills
+        </button>
+        <button class="quick-action-btn" data-prompt="How can I improve my resume and interview skills?">
+          Resume &amp; Interview Tips
+        </button>
+        <button class="quick-action-btn" data-prompt="What are the best strategies for career advancement?">
+          Career Growth
+        </button>
+      </div>
+
+      <div id="chat-container">
+        <div id="chat-log"></div>
+        <div id="typing-indicator" class="typing-indicator" style="display: none;">
+          <span>AI is typing</span>
+          <div class="typing-dots">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="input-container">
+        <form id="chat-form">
+          <div class="input-wrapper">
+            <input type="text" id="user-input" placeholder="Type your message..." autocomplete="off" />
+            <button type="button" id="mic-button" title="Start voice input">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                <line x1="12" y1="19" x2="12" y2="23"></line>
+                <line x1="8" y1="23" x2="16" y2="23"></line>
+              </svg>
+            </button>
+            <button type="submit" id="send-button">
+              <span class="button-text">Send</span>
+              <span class="loading-spinner"></span>
+            </button>
+          </div>
+        </form>
+
+        <div id="button-container">
+          <button id="clear-chat" class="action-button">
+            <svg viewBox="0 0 24 24" class="button-icon">
+              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+            </svg>
+            Clear
+          </button>
+          <button id="save-chat" class="action-button">
+            <svg viewBox="0 0 24 24" class="button-icon">
+              <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" />
+            </svg>
+            Save
+          </button>
+          <button id="toggle-theme" class="action-button">
+            <svg viewBox="0 0 24 24" class="button-icon theme-icon">
+              <path class="sun-icon" d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z" />
+              <path class="moon-icon" d="M9.37,5.51C9.19,6.15,9.1,6.82,9.1,7.5c0,4.08,3.32,7.4,7.4,7.4c0.68,0,1.35-0.09,1.99-0.27C17.45,17.19,14.93,19,12,19 c-3.86,0-7-3.14-7-7C5,9.07,6.81,6.55,9.37,5.51z M12,3c-4.97,0-9,4.03-9,9s4.03,9,9,9s9-4.03,9-9c0-0.46-0.04-0.92-0.1-1.36 c-0.98,1.37-2.58,2.26-4.4,2.26c-2.98,0-5.4-2.42-5.4-5.4c0-1.81,0.89-3.42,2.26-4.4C12.92,3.04,12.46,3,12,3L12,3z"/>
+            </svg>
+            Theme
+          </button>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script>
+    // Add scroll effect for header
+    window.addEventListener('scroll', () => {
+      const header = document.querySelector('header');
+      header.classList.toggle('scrolled', window.scrollY > 50);
+    });
+  </script>
+  <script src="script.js"></script>
+</body>
+</html>

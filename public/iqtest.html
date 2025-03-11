@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Psychological Assessment</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <style>
+        .pulse {
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .option {
+            transition: all 0.3s ease;
+        }
+
+        .option:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .option.selected {
+            background-color: #7c3aed;
+            color: white;
+        }
+
+        .option.correct {
+            background-color: #10B981;
+            color: white;
+        }
+
+        .option.incorrect {
+            background-color: #EF4444;
+            color: white;
+        }
+
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+
+        .timer {
+            transition: width 0.1s linear;
+        }
+
+        .question-enter {
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 py-8 px-4">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="mb-8 text-center">
+            <h1 class="text-4xl font-bold text-purple-700 mb-2">Psychological Assessment</h1>
+            <p class="text-gray-600 text-lg">Advanced AI-powered Intelligence & Personality Analysis</p>
+        </div>
+
+        <!-- Main Content -->
+        <div class="bg-white rounded-2xl shadow-lg p-8">
+            <!-- Initial Form -->
+            <div id="initial-form" class="space-y-6">
+                <div>
+                    <label for="age" class="block text-lg font-medium text-gray-700 mb-2">Please enter your age:</label>
+                    <input type="number" id="age" min="5" max="120" required 
+                           class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                </div>
+                <div>
+                    <label class="block text-lg font-medium text-gray-700 mb-2">Select Test Type:</label>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="border rounded-lg p-4 cursor-pointer hover:border-purple-500" onclick="selectTestType('iq')">
+                            <h3 class="font-semibold text-lg mb-2">IQ Test</h3>
+                            <p class="text-gray-600">10 questions • 30 seconds per question</p>
+                        </div>
+                        <div class="border rounded-lg p-4 cursor-pointer hover:border-purple-500" onclick="selectTestType('psychometric')">
+                            <h3 class="font-semibold text-lg mb-2">Personality Assessment</h3>
+                            <p class="text-gray-600">25 questions • 15 seconds per question</p>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="startTest()" 
+                        class="w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 transition-colors font-medium">
+                    Start Test
+                </button>
+            </div>
+
+            <!-- Test Container -->
+            <div id="test-container" class="hidden space-y-6">
+                <!-- Progress Bar -->
+                <div class="space-y-2">
+                    <div class="flex justify-between text-sm text-gray-600">
+                        <span class="progress-text"></span>
+                        <span class="timer-text"></span>
+                    </div>
+                    <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div class="progress-bar h-full bg-purple-600 w-0"></div>
+                    </div>
+                    <div class="h-1 bg-gray-200 rounded-full overflow-hidden">
+                        <div class="timer h-full bg-green-500 w-full"></div>
+                    </div>
+                </div>
+
+                <!-- Question Area -->
+                <div class="question-container">
+                    <!-- Questions will be inserted here -->
+                </div>
+
+                <!-- Submit Button -->
+                <div class="submit-area hidden">
+                    <button onclick="submitAnswer()" 
+                            class="w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 transition-colors font-medium">
+                        Submit Answer
+                    </button>
+                </div>
+
+                <!-- Loading Indicator -->
+                <div class="loading-indicator hidden">
+                    <div class="flex items-center justify-center space-x-2">
+                        <div class="w-3 h-3 bg-purple-600 rounded-full pulse"></div>
+                        <div class="w-3 h-3 bg-purple-600 rounded-full pulse" style="animation-delay: 0.2s"></div>
+                        <div class="w-3 h-3 bg-purple-600 rounded-full pulse" style="animation-delay: 0.4s"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Result Container -->
+            <div id="result" class="hidden space-y-6">
+                <!-- Results will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentQuestion = 0;
+        let score = 0;
+        let totalQuestions = 10;
+        let selectedAnswer = null;
+        let timer = null;
+        let timeLeft = 30;
+        let testType = 'iq';
+        let answers = [];
+
+        function selectTestType(type) {
+            testType = type;
+            totalQuestions = type === 'iq' ? 10 : 25;
+            timeLeft = type === 'iq' ? 30 : 15;
+            
+            document.querySelectorAll('.border').forEach(el => {
+                el.classList.remove('border-purple-500', 'bg-purple-50');
+            });
+            event.currentTarget.classList.add('border-purple-500', 'bg-purple-50');
+        }
+
+        function startTest() {
+            const age = document.getElementById('age').value;
+            if (!age || age < 5 || age > 120) {
+                alert('Please enter a valid age between 5 and 120');
+                return;
+            }
+
+            document.getElementById('initial-form').classList.add('hidden');
+            document.getElementById('test-container').classList.remove('hidden');
+            updateProgress();
+            fetchQuestions();
+        }
+
+        function updateProgress() {
+            const progressText = document.querySelector('.progress-text');
+            const progressBar = document.querySelector('.progress-bar');
+            progressText.textContent = `Question ${currentQuestion + 1} of ${totalQuestions}`;
+            progressBar.style.width = `${((currentQuestion + 1) / totalQuestions) * 100}%`;
+        }
+
+        function startTimer() {
+            timeLeft = testType === 'iq' ? 30 : 15;
+            if (timer) clearInterval(timer);
+            
+            const timerBar = document.querySelector('.timer');
+            const timerText = document.querySelector('.timer-text');
+            
+            timer = setInterval(() => {
+                timeLeft--;
+                timerBar.style.width = `${(timeLeft / (testType === 'iq' ? 30 : 15)) * 100}%`;
+                timerText.textContent = `Time remaining: ${timeLeft}s`;
+
+                if (timeLeft <= 5) {
+                    timerBar.classList.remove('bg-green-500');
+                    timerBar.classList.add('bg-red-500');
+                }
+
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    submitAnswer();
+                }
+            }, 1000);
+        }
+
+        async function fetchQuestions() {
+            const age = document.getElementById('age').value;
+            showLoading(true);
+            
+            try {
+                const response = await fetch(`/api/questions?age=${age}&type=${testType}`);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const question = await response.json();
+                displayQuestion(question);
+                startTimer();
+            } catch (error) {
+                console.error('Error fetching questions:', error);
+                alert('Error loading questions. Please try again.');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function showLoading(show) {
+            const loadingIndicator = document.querySelector('.loading-indicator');
+            const questionContainer = document.querySelector('.question-container');
+            const submitArea = document.querySelector('.submit-area');
+            
+            loadingIndicator.classList.toggle('hidden', !show);
+            questionContainer.classList.toggle('hidden', show);
+            submitArea.classList.toggle('hidden', show);
+        }
+
+        function displayQuestion(question) {
+            if (!question || !question.text || !question.options) {
+                console.error('Invalid question format:', question);
+                alert('Error loading question. Please try again.');
+                return;
+            }
+
+            selectedAnswer = null;
+            const questionContainer = document.querySelector('.question-container');
+            
+            questionContainer.innerHTML = `
+                <div class="question-enter">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-6">${question.text}</h3>
+                    <div class="space-y-4">
+                        ${question.options.map((option, index) => `
+                            <div class="option cursor-pointer p-4 rounded-lg border border-gray-200 hover:border-purple-500"
+                                 onclick="selectOption(${index}, ${testType === 'iq' ? question.correct : null}, '${testType === 'psychometric' ? question.trait : ''}')">
+                                ${option}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function selectOption(index, correctIndex, trait) {
+            selectedAnswer = testType === 'iq' 
+                ? { selected: index, correct: correctIndex }
+                : { selected: index, trait: trait };
+            
+            const options = document.querySelectorAll('.option');
+            options.forEach((option, i) => {
+                option.classList.remove('selected');
+                if (i === index) {
+                    option.classList.add('selected');
+                }
+            });
+            
+            document.querySelector('.submit-area').classList.remove('hidden');
+        }
+
+        async function submitAnswer() {
+            if (timer) clearInterval(timer);
+            
+            if (selectedAnswer !== null) {
+                if (testType === 'iq') {
+                    const options = document.querySelectorAll('.option');
+                    options.forEach((option, index) => {
+                        if (index === selectedAnswer.correct) {
+                            option.classList.add('correct');
+                        } else if (index === selectedAnswer.selected && selectedAnswer.selected !== selectedAnswer.correct) {
+                            option.classList.add('incorrect');
+                        }
+                    });
+
+                    if (selectedAnswer.selected === selectedAnswer.correct) {
+                        score++;
+                    }
+                } else {
+                    answers.push(selectedAnswer);
+                }
+
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+            
+            currentQuestion++;
+            
+            if (currentQuestion < totalQuestions) {
+                updateProgress();
+                fetchQuestions();
+            } else {
+                await submitTest();
+            }
+        }
+
+        async function submitTest() {
+            const age = document.getElementById('age').value;
+            showLoading(true);
+            
+            try {
+                let response;
+                if (testType === 'iq') {
+                    response = await fetch('/api/calculate-iq', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ age, score })
+                    });
+                } else {
+                    response = await fetch('/api/analyze-personality', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ age, answers })
+                    });
+                }
+                
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const result = await response.json();
+                displayResult(result);
+            } catch (error) {
+                console.error('Error calculating results:', error);
+                alert('Error calculating results. Please try again.');
+            }
+        }
+
+        function displayResult(result) {
+    const testContainer = document.getElementById('test-container');
+    const resultDiv = document.getElementById('result');
+    
+    testContainer.classList.add('hidden');
+    resultDiv.classList.remove('hidden');
+    
+    if (testType === 'iq') {
+        let performanceLevel;
+        if (result.iq >= 130) performanceLevel = 'Exceptional';
+        else if (result.iq >= 120) performanceLevel = 'Superior';
+        else if (result.iq >= 110) performanceLevel = 'Above Average';
+        else if (result.iq >= 90) performanceLevel = 'Average';
+        else if (result.iq >= 80) performanceLevel = 'Below Average';
+        else performanceLevel = 'Needs Improvement';
+
+        resultDiv.innerHTML = `
+            <div class="text-center space-y-6">
+                <h2 class="text-2xl font-bold text-gray-800">Your IQ Test Results</h2>
+                <div class="p-6 bg-purple-50 rounded-xl">
+                    <p class="text-4xl font-bold text-purple-700 mb-2">${result.iq}</p>
+                    <p class="text-purple-600 font-medium">IQ Score</p>
+                </div>
+                <div class="space-y-4">
+                    <p class="text-lg">Performance Level: <span class="font-semibold">${performanceLevel}</span></p>
+                    <p class="text-lg">Correct Answers: <span class="font-semibold">${score} out of ${totalQuestions}</span></p>
+                    <p class="text-gray-600 italic">${result.interpretation}</p>
+                </div>
+                <div class="pt-6">
+                    <button onclick="location.reload()" 
+                            class="bg-purple-600 text-white px-8 py-3 rounded-lg hover:bg-purple-700 transition-colors font-medium">
+                        Take Test Again
+                    </button>
+                </div>
+            </div>
+        `;
+    } else {
+        const traitEmojis = {
+            'extraversion': '👥',
+            'agreeableness': '🤝',
+            'conscientiousness': '✓',
+            'neuroticism': '🎭',
+            'openness': '🌟'
+        };
+
+        const traitDescriptions = {
+            'extraversion': 'Social interaction and energy level',
+            'agreeableness': 'Cooperation and consideration of others',
+            'conscientiousness': 'Organization and responsibility',
+            'neuroticism': 'Emotional sensitivity and stability',
+            'openness': 'Curiosity and openness to new experiences'
+        };
+
+        let traitsHTML = '';
+        for (const [trait, score] of Object.entries(result.scores)) {
+            traitsHTML += `
+                <div class="mb-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-lg font-medium">${traitEmojis[trait]} ${trait.charAt(0).toUpperCase() + trait.slice(1)}</span>
+                        <span class="text-purple-600 font-semibold">${Math.round(score)}%</span>
+                    </div>
+                    <div class="bg-gray-200 rounded-full h-2.5">
+                        <div class="bg-purple-600 h-2.5 rounded-full" style="width: ${score}%"></div>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-1">${traitDescriptions[trait]}</p>
+                </div>
+            `;
+        }
+
+        resultDiv.innerHTML = `
+            <div class="space-y-6">
+                <h2 class="text-2xl font-bold text-gray-800 text-center">Your Personality Assessment Results</h2>
+                
+                <div class="bg-purple-50 rounded-xl p-6 mb-6">
+                    <h3 class="text-xl font-semibold text-purple-700 mb-2">Personality Type: ${result.interpretation.type}</h3>
+                    <p class="text-gray-700">${result.interpretation.description}</p>
+                </div>
+
+                <div class="space-y-4">
+                    <h3 class="text-xl font-semibold text-gray-800">Trait Analysis</h3>
+                    ${traitsHTML}
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                    <div class="bg-green-50 rounded-xl p-4">
+                        <h4 class="text-lg font-semibold text-green-700 mb-2">Key Strengths</h4>
+                        <ul class="list-disc list-inside space-y-1">
+                            ${result.interpretation.strengths.map(s => `<li class="text-gray-700">${s}</li>`).join('')}
+                        </ul>
+                    </div>
+                    <div class="bg-blue-50 rounded-xl p-4">
+                        <h4 class="text-lg font-semibold text-blue-700 mb-2">Areas for Growth</h4>
+                        <ul class="list-disc list-inside space-y-1">
+                            ${result.interpretation.improvements.map(i => `<li class="text-gray-700">${i}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="text-center pt-6">
+                    <button onclick="location.reload()" 
+                            class="bg-purple-600 text-white px-8 py-3 rounded-lg hover:bg-purple-700 transition-colors font-medium">
+                        Take Test Again
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+}
+    </script>
+</body>
+</html>
