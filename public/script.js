@@ -1,5 +1,86 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Speech Recognition Setup - Moved to top to ensure proper initialization
+    // Detect browser type
+    function detectBrowser() {
+        const userAgent = window.navigator.userAgent;
+        if (userAgent.indexOf("Edg") > -1) {
+            return "Edge";
+        } else if (userAgent.indexOf("Chrome") > -1) {
+            return "Chrome";
+        } else if (userAgent.indexOf("Firefox") > -1) {
+            return "Firefox";
+        }
+        return "Other";
+    }
+
+    // Helper function to detect language based on text content
+    function detectLanguage(text) {
+        // Check for Devanagari characters
+        const devanagariRegex = /[\u0900-\u097F]/;
+        if (devanagariRegex.test(text)) {
+            // If the word "मराठी" is present, assume Marathi; else, assume Hindi.
+            if (/मराठी/.test(text)) {
+                return 'mr-IN';
+            }
+            return 'hi-IN';
+        }
+        return 'en-US';
+    }
+
+    // Helper function to get a preferred female voice for a given language based on browser.
+    function getVoiceForLanguage(lang) {
+        const voices = speechSynthesis.getVoices();
+        const browser = detectBrowser();
+        
+        if (lang === 'en-US' || lang === 'en-GB') {
+            if (browser === 'Edge') {
+                // Original logic for MS Edge:
+                return voices.find(voice =>
+                    voice.lang === 'en-US' &&
+                    (voice.name.includes('Enhanced') ||
+                     voice.name.includes('Premium') ||
+                     voice.name.includes('Neural') ||
+                     voice.name.includes('Natural'))
+                ) || voices.find(voice =>
+                    voice.lang === 'en-GB' &&
+                    (voice.name.includes('Enhanced') ||
+                     voice.name.includes('Premium') ||
+                     voice.name.includes('Neural') ||
+                     voice.name.includes('Natural'))
+                ) || voices.find(voice =>
+                    voice.lang.startsWith('en') && !voice.name.includes('Microsoft')
+                ) || voices.find(voice =>
+                    voice.lang.startsWith('en')
+                ) || voices[0];
+            } else if (browser === 'Chrome') {
+                // For Chrome, try using "Google US English" if available:
+                let googleVoice = voices.find(voice => voice.name.toLowerCase().includes('google us english'));
+                if (googleVoice) return googleVoice;
+                // Otherwise, fallback to similar logic
+                return voices.find(voice => voice.lang.startsWith('en')) || voices[0];
+            } else {
+                // Fallback for other browsers
+                return voices.find(voice => voice.lang.startsWith('en')) || voices[0];
+            }
+        }
+
+        if (lang === 'hi-IN' || lang === 'mr-IN') {
+            if (browser === 'Edge') {
+                // On Edge, try to pick a voice with "heera" in the name (common identifier)
+                let hindiVoice = voices.find(voice => voice.name.toLowerCase().includes('heera'));
+                if (hindiVoice) return hindiVoice;
+            } else if (browser === 'Chrome') {
+                // On Chrome, try to pick a voice that mentions "hindi" in its name
+                let hindiVoice = voices.find(voice => voice.name.toLowerCase().includes('hindi'));
+                if (hindiVoice) return hindiVoice;
+            }
+            // Fallback: return any voice that matches the language code
+            return voices.find(voice => voice.lang.startsWith(lang.split('-')[0])) || voices[0];
+        }
+        // Fallback for any other language
+        return voices[0];
+    }
+
+    // Speech Recognition Setup
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recognition = null;
     let isRecording = false;
@@ -31,17 +112,29 @@ document.addEventListener('DOMContentLoaded', () => {
     const converter = new showdown.Converter();
     const sessionId = Date.now().toString(36) + Math.random().toString(36).substr(2);
 
-    // Initialize Speech Recognition
+    // Initialize Speech Recognition if supported
     if (SpeechRecognition) {
         recognition = new SpeechRecognition();
         recognition.continuous = true; // Keep recording until manually stopped
         recognition.interimResults = false;
+        // Start with English; language may be changed dynamically later
         recognition.lang = 'en-US';
 
         recognition.onresult = (event) => {
             const lastResultIndex = event.results.length - 1;
             const transcript = event.results[lastResultIndex][0].transcript;
             userInput.value = transcript;
+            
+            // Detect language from the transcript and update recognition.lang if needed
+            const detectedLang = detectLanguage(transcript);
+            if (recognition.lang !== detectedLang) {
+                console.log("Switching recognition language to", detectedLang);
+                recognition.lang = detectedLang;
+                // Restart recognition with new language setting
+                recognition.stop();
+                isRecording = false;
+                setTimeout(startRecording, 300);
+            }
         };
 
         recognition.onend = () => {
@@ -130,44 +223,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Text-to-Speech Setup
-    const speechSynthesis = window.speechSynthesis;
-    let selectedVoice = null;
+    const speechSynthesisInstance = window.speechSynthesis;
 
+    // Preload voices
     function initVoice() {
-        const voices = speechSynthesis.getVoices();
-        selectedVoice = voices.find(voice => 
-            voice.lang === 'en-US' && 
-            (voice.name.includes('Enhanced') || 
-             voice.name.includes('Premium') || 
-             voice.name.includes('Neural') || 
-             voice.name.includes('Natural'))
-        ) || voices.find(voice => 
-            voice.lang === 'en-GB' && 
-            (voice.name.includes('Enhanced') || 
-             voice.name.includes('Premium') || 
-             voice.name.includes('Neural') || 
-             voice.name.includes('Natural'))
-        ) || voices.find(voice => 
-            voice.lang.startsWith('en') && 
-            !voice.name.includes('Microsoft')
-        ) || voices.find(voice => 
-            voice.lang.startsWith('en')
-        ) || voices[0];
+        const voices = speechSynthesisInstance.getVoices();
+        if (!voices.length) return;
     }
 
-    if (speechSynthesis.onvoiceschanged !== undefined) {
+    if (speechSynthesisInstance.onvoiceschanged !== undefined) {
         let attempts = 0;
         const maxAttempts = 3;
         
         const tryInitVoice = () => {
             initVoice();
-            if (!selectedVoice && attempts < maxAttempts) {
+            if (attempts < maxAttempts) {
                 attempts++;
                 setTimeout(tryInitVoice, 500);
             }
         };
         
-        speechSynthesis.onvoiceschanged = tryInitVoice;
+        speechSynthesisInstance.onvoiceschanged = tryInitVoice;
     }
     initVoice();
 
@@ -192,25 +268,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function speakText(text) {
-        speechSynthesis.cancel();
+        // Cancel any ongoing speech
+        speechSynthesisInstance.cancel();
 
         const cleanText = processTextForSpeech(text);
         const sentences = cleanText.match(/[^.!?]+[.!?]+/g) || [cleanText];
 
         sentences.forEach((sentence, index) => {
-            const utterance = new SpeechSynthesisUtterance(sentence.trim());
-            utterance.voice = selectedVoice;
-            
-            const wordCount = sentence.split(/\s+/).length;
+            const trimmedSentence = sentence.trim();
+            const utterance = new SpeechSynthesisUtterance(trimmedSentence);
+
+            // Dynamically detect the language for the sentence
+            const lang = detectLanguage(trimmedSentence);
+            utterance.lang = lang;
+            // Use customized voice selection based on language and browser
+            utterance.voice = getVoiceForLanguage(lang);
+
+            const wordCount = trimmedSentence.split(/\s+/).length;
             utterance.rate = wordCount > 20 ? 0.95 : 1.0;
-            utterance.pitch = sentence.trim().endsWith('?') ? 1.1 : 1.0;
+            utterance.pitch = trimmedSentence.endsWith('?') ? 1.1 : 1.0;
             utterance.volume = 1.0;
 
             if (index > 0) {
                 const breathingPause = new SpeechSynthesisUtterance('.');
                 breathingPause.volume = 0;
                 breathingPause.rate = 0.1;
-                setTimeout(() => speechSynthesis.speak(breathingPause), index * 250);
+                setTimeout(() => speechSynthesisInstance.speak(breathingPause), index * 250);
             }
 
             utterance.onstart = () => {
@@ -234,8 +317,8 @@ document.addEventListener('DOMContentLoaded', () => {
             };
 
             setTimeout(() => {
-                speechSynthesis.speak(utterance);
-            }, index * (300 + Math.min(sentence.length * 2, 500)));
+                speechSynthesisInstance.speak(utterance);
+            }, index * (300 + Math.min(trimmedSentence.length * 2, 500)));
         });
     }
 
@@ -274,7 +357,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!message) return;
 
         // Stop any ongoing speech when sending a new message
-        speechSynthesis.cancel();
+        speechSynthesisInstance.cancel();
 
         addMessageToChatLog('You', message, 'user-message');
         if (userInput) {
@@ -347,8 +430,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // Add speak button handler
             const speakBtn = actionsDiv.querySelector('.speak-btn');
             speakBtn?.addEventListener('click', () => {
-                if (speechSynthesis.speaking) {
-                    speechSynthesis.cancel();
+                if (speechSynthesisInstance.speaking) {
+                    speechSynthesisInstance.cancel();
                     speakBtn.textContent = '🔊';
                 } else {
                     speakText(botMessage);
@@ -444,8 +527,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const speakBtn = actionsDiv.querySelector('.speak-btn');
             speakBtn?.addEventListener('click', () => {
-                if (speechSynthesis.speaking) {
-                    speechSynthesis.cancel();
+                if (speechSynthesisInstance.speaking) {
+                    speechSynthesisInstance.cancel();
                     speakBtn.textContent = '🔊';
                 } else {
                     speakText(message);
@@ -467,7 +550,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!confirmed) return;
 
         // Stop any ongoing speech
-        speechSynthesis.cancel();
+        speechSynthesisInstance.cancel();
 
         if (chatLog) chatLog.innerHTML = '';
         try {
@@ -497,7 +580,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     saveChatBtn?.addEventListener('click', () => {
         // Stop any ongoing speech
-        speechSynthesis.cancel();
+        speechSynthesisInstance.cancel();
 
         if (!chatLog) return;
 
@@ -558,7 +641,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Handle page visibility change to stop speech when tab is hidden
     document.addEventListener('visibilitychange', () => {
         if (document.hidden) {
-            speechSynthesis.cancel();
+            speechSynthesisInstance.cancel();
         }
     });
 

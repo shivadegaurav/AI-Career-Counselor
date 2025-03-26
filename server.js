@@ -188,12 +188,14 @@ Career Avoidance Recommendations:
 Suggest careers to avoid if they don't align with the user’s preferences or personality traits. For example, if a user prefers independence and creativity, suggest avoiding rigid corporate environments.
 Career Suggestions in Tabular Form:
 
-After gathering enough information (from at least 15 questions), present the career suggestions in the following tabular format at the end of the conversation, with detailed explanations:
-Career Suggestion	Reason
-Software Engineer	Strong analytical skills and interest in technology.
-Graphic Designer	High creativity and interest in visual arts.
-Data Scientist	Enjoys working with data and problem-solving.
-Social Worker	High empathy and desire to help others.
+After gathering enough information (from at least 15 questions), dont use ---- || send only text
+present the career suggestions in the following list format at the end of the conversation, with detailed explanations:
+Career Suggestion - Reason
+
+1)Software Engineer - Strong analytical skills and interest in technology.
+2)Graphic Designer - High creativity and interest in visual arts.
+3)Data Scientist - Enjoys working with data and problem-solving.
+4)Social Worker - High empathy and desire to help others.
 `
       };
       history.push(initialMessage);

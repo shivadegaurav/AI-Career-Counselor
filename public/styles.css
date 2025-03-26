@@ -104,6 +104,61 @@ header {
     position: relative;
 }
 
+.navigation {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    padding: 20px;
+    background-color:#f8fafc;
+    flex-wrap: wrap;
+}
+
+.navigation button {
+    background-color: #ffffff;
+    color: #2c3e50;
+    border: 2px solid #3498db;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    outline: none;
+    text-transform: capitalize;
+    letter-spacing: 0.5px;
+}
+
+.navigation button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+}
+
+.navigation button:nth-child(1) {
+    border-color: #3498db; /* Blue */
+}
+
+.navigation button:nth-child(2) {
+    border-color: #2ecc71; /* Green */
+}
+
+.navigation button:nth-child(3) {
+    border-color: #9b59b6; /* Purple */
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+    .navigation {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .navigation button {
+        width: 100%;
+        max-width: 300px;
+    }
+}
 .header-left {
     display: flex;
     flex-direction: column;
